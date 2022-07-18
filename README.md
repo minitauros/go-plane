@@ -20,11 +20,13 @@ func main() {
 	surface := plane.NewSurface(5, 5)
 
 	// Creates a fill as follows.
-	// . . . . .
-	// . . . . .
-	// . . . . .
-	// x . . . .
-	// x x . . .
+	// 4 | . . . . .
+	// 3 | . . . . .
+	// 2 | . . . . .
+	// 1 | x . . . .
+	// 0 | x x . . .
+	//   -----------
+	//     0 1 2 3 4
 	surface.Fill(
 		plane.Coord{0, 0},
 		plane.Coord{1, 0},
