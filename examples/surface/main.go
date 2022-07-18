@@ -6,6 +6,7 @@ import (
 
 func main() {
 	// Create new surface.
+	// Both the x and y coordinates in this example are in range (0,4).
 	surface := plane.NewSurface(5, 5)
 
 	// Creates a fill as follows.

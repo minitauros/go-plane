@@ -15,20 +15,23 @@ func main() {
 
 	// Fill the plane, using 0,0 as base and starting the flood at 0,1.
 	// Note that this does **not** fill `base`.
-	// That means that the whole surface will be filled after this fill, except the `base` coordinate.
-	// If you want to fill this, call `surface.Fill()`.
+	// That means that the whole surface will be filled after this fill,
+	// except the `base` coordinate. If you want to fill this,
+	// call `surface.Fill()`.
 	ff.Fill(plane.Coord{0, 0}, plane.Coord{0, 1})
 
 	// Return the quickest path from 0,0 to 4,4.
 	// This will go around obstacles.
 	ff.CountSteps(plane.Coord{0, 0}, plane.Coord{0, 1}) // 9
 
-	// Returns true if 5,5 can be reached, i.e. if there are no obstacles (filled coords) in the way that the flood
-	// cannot pass through in some way.
-	ff.CanReach(plane.Coord{0, 0}, plane.Coord{5, 5}) // True
+	// Returns true if 5,5 can be reached, i.e. if there are no
+	// obstacles (filled coords) in the way that the flood cannot pass
+	// through in some way.
+	ff.CanReach(plane.Coord{0, 0}, plane.Coord{4, 4}) // True
 
-	// Returns true if 5,5 can be reached, i.e. if there are no obstacles (filled coords) in the way that the flood
-	// cannot pass through in some way.
+	// Returns true if 5,5 can be reached, i.e. if there are no
+	// obstacles (filled coords) in the way that the flood cannot pass
+	// through in some way.
 	// Forces the flood to start at 0,1 and gives it no other options.
-	ff.CanReachWhenStartingFillAt(plane.Coord{0, 0}, plane.Coord{5, 5}, plane.Coord{0, 1})
+	ff.CanReachWhenStartingFillAt(plane.Coord{0, 0}, plane.Coord{4, 4}, plane.Coord{0, 1})
 }
