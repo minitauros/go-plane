@@ -187,3 +187,91 @@ func Test_Coord_ConnectsTo(t *testing.T) {
 		}
 	})
 }
+
+func Test_Coord_GetCoordAt(t *testing.T) {
+	base := Coord{1, 1}
+	type input struct {
+		xOffset int
+		yOffset int
+	}
+	testCases := []struct {
+		description string
+		input       input
+		expected    Coord
+	}{
+		{
+			description: "works top",
+			input: input{
+				xOffset: 0,
+				yOffset: 1,
+			},
+			expected: Coord{1, 2},
+		},
+		{
+			description: "works top right",
+			input: input{
+				xOffset: 1,
+				yOffset: 1,
+			},
+			expected: Coord{2, 2},
+		},
+		{
+			description: "works right",
+			input: input{
+				xOffset: 1,
+				yOffset: 0,
+			},
+			expected: Coord{2, 1},
+		},
+		{
+			description: "works bot right",
+			input: input{
+				xOffset: 1,
+				yOffset: -1,
+			},
+			expected: Coord{2, 0},
+		},
+		{
+			description: "works bot",
+			input: input{
+				xOffset: 0,
+				yOffset: -1,
+			},
+			expected: Coord{1, 0},
+		},
+		{
+			description: "works bot left",
+			input: input{
+				xOffset: -1,
+				yOffset: -1,
+			},
+			expected: Coord{0, 0},
+		},
+		{
+			description: "works left",
+			input: input{
+				xOffset: -1,
+				yOffset: 0,
+			},
+			expected: Coord{0, 1},
+		},
+		{
+			description: "works top left",
+			input: input{
+				xOffset: -1,
+				yOffset: 1,
+			},
+			expected: Coord{0, 2},
+		},
+	}
+
+	Convey("Coord.GetCoordAt()", t, func() {
+		for i, tc := range testCases {
+			Convey(fmt.Sprintf("%d: %s", i, tc.description), func() {
+				res := base.GetCoordAt(tc.input.xOffset, tc.input.yOffset)
+
+				So(res, ShouldResemble, tc.expected)
+			})
+		}
+	})
+}

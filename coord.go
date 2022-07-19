@@ -86,6 +86,11 @@ func (c Coord) GetCoordsAround() Coords {
 	}
 }
 
+// GetCoordAt returns the coord at the given offset from the current coord.
+func (c Coord) GetCoordAt(xOffset, yOffset int) Coord {
+	return Coord{c.X + xOffset, c.Y + yOffset}
+}
+
 // Coords is an array of coordinates.
 type Coords []Coord
 
