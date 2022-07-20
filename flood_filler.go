@@ -117,11 +117,11 @@ func (f *FloodFiller) explore(
 		next := target.GetCoordInDirection(d)
 		if !f.s.IsFilled(next) {
 			wg.Add(1)
-			goingInSameDirection := d == skipDirection.opposite()
+			goingInSameDirection := d == skipDirection.Opposite()
 			if goingInSameDirection {
-				f.explore(next, d.opposite(), wg, false, numStepsTaken)
+				f.explore(next, d.Opposite(), wg, false, numStepsTaken)
 			} else {
-				go f.explore(next, d.opposite(), wg, true, numStepsTaken)
+				go f.explore(next, d.Opposite(), wg, true, numStepsTaken)
 			}
 		}
 	}

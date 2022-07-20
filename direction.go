@@ -12,7 +12,8 @@ const (
 	Left  Direction = "left"
 )
 
-func (d Direction) opposite() Direction {
+// Opposite returns the opposite direction.
+func (d Direction) Opposite() Direction {
 	switch d {
 	case Top:
 		return Bot
