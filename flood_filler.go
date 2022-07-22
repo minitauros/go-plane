@@ -1,58 +1,51 @@
 package plane
 
-import (
-	"sync"
-)
-
-const maxConcurrency = 8
-
 // FloodFiller is a flood filler.
 type FloodFiller struct {
-	s      *Surface
-	concCh chan struct{}
+	s *Surface
 }
 
 // NewFloodFiller returns a new flood filler.
 func NewFloodFiller(surface *Surface) *FloodFiller {
 	return &FloodFiller{
-		s:      surface,
-		concCh: make(chan struct{}, maxConcurrency),
+		s: surface,
 	}
 }
 
 // Fill starts a flood fill from `base`, starting the flood at `startAt`.
 // It returns the number of coords that were filled.
-// It does not fill `base`.
+// It does not flood `base`.
 func (f *FloodFiller) Fill(base, startAt Coord) int {
 	if !base.ConnectsTo(startAt) {
 		return 0
 	}
 	numFilledAtStart := f.s.CountFilled()
-	f.fill(base, startAt)
+	f.flood(base, startAt, false)
 	numFilledAtEnd := f.s.CountFilled()
 	return numFilledAtEnd - numFilledAtStart
 }
 
 // CanReach returns true if a path can be made through unfilled coords from `base` to `target`.
 func (f *FloodFiller) CanReach(base, target Coord) bool {
-	return f.canReach(base, target)
+	return f.canReach(base, target, false)
 }
 
 // CanReachWhenStartingFillAt returns true if a path can be made through unfilled coords from `base` to `target`,
 // given that the flood fill must start at `startAt`.
 func (f *FloodFiller) CanReachWhenStartingFillAt(base, target, startAt Coord) bool {
-	return f.canReach(base, target, startAt)
+	return f.canReach(base, target, false, startAt)
 }
 
 // CountSteps returns the smallest number of steps that can be taken to reach `target` from `base`.
 func (f *FloodFiller) CountSteps(base, target Coord) int {
-	if !f.canReach(base, target) {
+	if !f.canReach(base, target, true) {
 		return -1
 	}
-	return f.s.getValue(target)
+	return f.s.getDistance(target)
 }
 
-func (f *FloodFiller) canReach(base, target Coord, allowedStarts ...Coord) bool {
+func (f *FloodFiller) canReach(base, target Coord, countSteps bool, allowedStarts ...Coord) bool {
+	distanceBefore := f.s.getDistance(target)
 	filledAroundBefore := f.s.getCoordsFilledAround(target)
 	for _, d := range base.GetDirectionsTo(target) {
 		coordInDirection := base.GetCoordInDirection(d)
@@ -68,21 +61,25 @@ func (f *FloodFiller) canReach(base, target Coord, allowedStarts ...Coord) bool 
 				continue
 			}
 		}
-		f.fill(base, coordInDirection)
+		f.flood(base, coordInDirection, countSteps)
+	}
+	if countSteps {
+		return distanceBefore != f.s.getDistance(target)
 	}
 	filledAroundAfter := f.s.getCoordsFilledAround(target)
 	return len(filledAroundAfter) > len(filledAroundBefore)
 }
 
-func (f *FloodFiller) fill(base, start Coord) {
-	// fill base coord so that the flood cannot escape.
+func (f *FloodFiller) flood(base, start Coord, countSteps bool) {
+	// Fill base coord so that the flood cannot escape.
 	f.s.Fill(base)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	// We start with number of steps taken = 1 because the starting coord is already 1 step away from the base coord, and we are also exploring that one.
-	go f.explore(start, start.GetDirectionsTo(base)[0], wg, true, 1)
-	wg.Wait()
+	if countSteps {
+		f.exploreDistance(start, start.GetDirectionsTo(base)[0], 0)
+	} else {
+		f.explore(start, start.GetDirectionsTo(base)[0])
+
+	}
 
 	f.s.Remove(base)
 }
@@ -90,39 +87,56 @@ func (f *FloodFiller) fill(base, start Coord) {
 func (f *FloodFiller) explore(
 	target Coord,
 	skipDirection Direction,
-	wg *sync.WaitGroup,
-	concurrent bool,
+) {
+	if f.s.IsFilled(target) {
+		return
+	}
+	f.s.Fill(target)
+	for _, d := range GetAllDirections() {
+		if d == skipDirection {
+			continue
+		}
+		next := target.GetCoordInDirection(d)
+		goingInSameDirection := d == skipDirection.Opposite()
+		if goingInSameDirection {
+			f.explore(next, d.Opposite())
+		} else {
+			f.explore(next, d.Opposite())
+		}
+	}
+}
+
+// exploreDistance is like explore but also counts the number of steps it takes to reach positions.
+// It is a bit more inefficient because it will re-explore coords that were already reached,
+// but that can be explored by a different call/routine in fewer steps.
+func (f *FloodFiller) exploreDistance(
+	target Coord,
+	skipDirection Direction,
 	numStepsTaken int,
 ) {
 	numStepsTaken++
-	defer wg.Done()
-	if concurrent {
-		f.concCh <- struct{}{}
-		defer func() {
-			<-f.concCh
-		}()
+	if !f.s.Fits(target) {
+		return
+	}
+	curVal, exists := f.s.getValue(target)
+	if !exists || curVal.distance == 0 || curVal.distance > numStepsTaken {
+		f.s.setDistance(target, numStepsTaken)
+	} else if exists && curVal.distance <= numStepsTaken {
+		return
 	}
 	if f.s.IsFilled(target) {
-		if !f.s.hasValue(target) {
-			f.s.setValue(target, numStepsTaken)
-		}
 		return
-	} else {
-		f.s.fillWithValue(target, numStepsTaken)
 	}
 	for _, d := range GetAllDirections() {
 		if d == skipDirection {
 			continue
 		}
 		next := target.GetCoordInDirection(d)
-		if !f.s.IsFilled(next) {
-			wg.Add(1)
-			goingInSameDirection := d == skipDirection.Opposite()
-			if goingInSameDirection {
-				f.explore(next, d.Opposite(), wg, false, numStepsTaken)
-			} else {
-				go f.explore(next, d.Opposite(), wg, true, numStepsTaken)
-			}
+		goingInSameDirection := d == skipDirection.Opposite()
+		if goingInSameDirection {
+			f.exploreDistance(next, d.Opposite(), numStepsTaken)
+		} else {
+			f.exploreDistance(next, d.Opposite(), numStepsTaken)
 		}
 	}
 }

@@ -1,12 +1,18 @@
 package plane
 
-import (
-	"sync"
-)
+// coordVal describes the values that exist at a coordinate. A coordinate can be filled but have no distance, or have a
+// distance but not be filled. This data is saved for different purposes. We want to know if a position is filled when
+// we want to flood flood (don't flood the same coord twice). We want to know the distance when calculating the distance.
+// In that case, sometimes we have to visit positions twice (because a longer path may have reached a coord before a
+// shorter path).
+type coordVal struct {
+	isFilled bool
+	distance int
+}
 
 // surfaceMap defines which coordinates in a surface are filled.
-// The structure is [x][y]value.
-type surfaceMap map[int]map[int]int
+// The structure is [x][y]coordVal.
+type surfaceMap map[int]map[int]coordVal
 
 // Surface represents a surface of a given width and height.
 // For width 5 and height 5, the coordinates would range from 0-4x and 0-4y.
@@ -16,20 +22,18 @@ type Surface struct {
 	height int
 	// surface keeps track of which coordinates are filled.
 	surface surfaceMap
-	mux     *sync.RWMutex
 }
 
 // NewSurface returns a new surface.
 func NewSurface(width int, height int) *Surface {
 	s := make(surfaceMap, width)
 	for i := 0; i < width; i++ {
-		s[i] = make(map[int]int, height)
+		s[i] = make(map[int]coordVal, height)
 	}
 	return &Surface{
 		width:   width,
 		height:  height,
 		surface: s,
-		mux:     &sync.RWMutex{},
 	}
 }
 
@@ -44,9 +48,7 @@ func (s *Surface) EachFilled() <-chan Coord {
 	go func() {
 		for x := 0; x < s.width; x++ {
 			for y := 0; y < s.height; y++ {
-				s.mux.RLock()
 				_, ok := s.surface[x][y]
-				s.mux.RUnlock()
 				if ok {
 					ch <- Coord{x, y}
 				}
@@ -92,8 +94,6 @@ func (s *Surface) Fits(coord Coord) bool {
 
 // Remove removes (unfills) the given coords from the surface.
 func (s *Surface) Remove(coords ...Coord) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
 	for _, coord := range coords {
 		delete(s.surface[coord.X], coord.Y)
 	}
@@ -102,29 +102,24 @@ func (s *Surface) Remove(coords ...Coord) {
 // Fill fills the given coords.
 func (s *Surface) Fill(coords ...Coord) {
 	for _, coord := range coords {
-		if !s.Fits(coord) {
-			continue
-		}
-		// If already filled, don't fill again.
+		// If already filled, don't flood again.
 		// We don't want to overwrite the value.
 		if s.IsFilled(coord) {
 			continue
 		}
-		s.mux.Lock()
-		s.surface[coord.X][coord.Y] = 0
-		s.mux.Unlock()
+		s.surface[coord.X][coord.Y] = coordVal{
+			isFilled: true,
+		}
 	}
 }
 
-// IsFilled returns true if the given coord is filled.
+// IsFilled returns true if the given coord is filled or does not fit on the surface.
 func (s *Surface) IsFilled(coord Coord) bool {
-	s.mux.RLock()
-	_, ok := s.surface[coord.X][coord.Y]
-	s.mux.RUnlock()
-	if ok {
+	if !s.Fits(coord) {
 		return true
 	}
-	return coord.X < 0 || coord.Y < 0 || coord.X > s.width-1 || coord.Y > s.height-1
+	v, ok := s.surface[coord.X][coord.Y]
+	return ok && v.isFilled
 }
 
 // Clone returns a clone of the surface.
@@ -136,40 +131,36 @@ func (s *Surface) Clone() *Surface {
 	return clone
 }
 
-func (s *Surface) fillWithValue(coord Coord, val int) {
-	s.Fill(coord)
-	s.setValue(coord, val)
+func (s *Surface) hasDistance(coord Coord) bool {
+	v, ok := s.surface[coord.X][coord.Y]
+	return ok && v.distance > 0
 }
 
-func (s *Surface) hasValue(coord Coord) bool {
-	s.mux.RLock()
-	_, ok := s.surface[coord.X][coord.Y]
-	s.mux.RUnlock()
-	return ok
-}
-
-func (s *Surface) getValue(coord Coord) int {
-	s.mux.RLock()
-	defer s.mux.RUnlock()
+func (s *Surface) getDistance(coord Coord) int {
 	if v, ok := s.surface[coord.X][coord.Y]; ok {
-		return v
+		return v.distance
 	}
 	return -1
 }
 
-func (s *Surface) setValue(coord Coord, val int) {
-	s.mux.Lock()
-	s.surface[coord.X][coord.Y] = val
-	s.mux.Unlock()
+func (s *Surface) getValue(coord Coord) (coordVal, bool) {
+	v, ok := s.surface[coord.X][coord.Y]
+	return v, ok
 }
 
-// forceFill does a regular fill, but does not check if the coords actually fit on the surface,
+func (s *Surface) setDistance(coord Coord, distance int) {
+	v := s.surface[coord.X][coord.Y]
+	v.distance = distance
+	s.surface[coord.X][coord.Y] = v
+}
+
+// forceFill does a regular flood, but does not check if the coords actually fit on the surface,
 // which is slightly faster.
 func (s *Surface) forceFill(coords ...Coord) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
 	for _, coord := range coords {
-		s.surface[coord.X][coord.Y] = 0
+		v := s.surface[coord.X][coord.Y]
+		v.isFilled = true
+		s.surface[coord.X][coord.Y] = v
 	}
 }
 
@@ -184,14 +175,14 @@ func (s *Surface) getCoordsFilledAround(coord Coord) Coords {
 	return filled
 }
 
-// fillRows is a utility method to conveniently fill the surface.
+// fillRows is a utility method to conveniently flood the surface.
 // Example input:
 // [][]int{
 //   {0, 0, 0},
 //   {0, 0, 0},
 //   {0, 1, 0},
 // }
-// Will fill {1,0}.
+// Will flood coord 1,0.
 func (s *Surface) fillRows(rows [][]int) {
 	for y, row := range rows {
 		for x, val := range row {

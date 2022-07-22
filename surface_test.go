@@ -61,13 +61,13 @@ func TestSurface_fill(t *testing.T) {
 			input:       []Coord{{0, 0}, {0, 2}, {2, 2}, {2, 0}},
 			expected: surfaceMap{
 				0: {
-					0: 0,
-					2: 0,
+					0: coordVal{},
+					2: coordVal{},
 				},
 				1: {},
 				2: {
-					0: 0,
-					2: 0,
+					0: coordVal{},
+					2: coordVal{},
 				},
 			},
 		},
@@ -77,11 +77,11 @@ func TestSurface_fill(t *testing.T) {
 			expected: surfaceMap{
 				0: {},
 				1: {
-					1: 0,
-					2: 0,
+					1: coordVal{},
+					2: coordVal{},
 				},
 				2: {
-					2: 0,
+					2: coordVal{},
 				},
 			},
 		},
@@ -96,7 +96,7 @@ func TestSurface_fill(t *testing.T) {
 		},
 	}
 
-	Convey("fill()", t, func() {
+	Convey("flood()", t, func() {
 		for i, tc := range testCases {
 			Convey(fmt.Sprintf("%d: %s", i, tc.description), func() {
 				s := NewSurface(3, 3)
@@ -139,29 +139,29 @@ func Test_StandardSurface_Remove(t *testing.T) {
 			description: "removes correctly",
 			input: input{
 				surface: surfaceMap{
-					1: map[int]int{
-						2: 0,
+					1: map[int]coordVal{
+						2: {},
 					},
 				},
 				remove: []Coord{{1, 2}},
 			},
 			expected: surfaceMap{
-				1: map[int]int{},
+				1: map[int]coordVal{},
 			},
 		},
 		{
 			description: "does nothing when given coord to remove does not exist",
 			input: input{
 				surface: surfaceMap{
-					4: map[int]int{
-						9: 0,
+					4: map[int]coordVal{
+						9: {},
 					},
 				},
 				remove: []Coord{{1, 2}},
 			},
 			expected: surfaceMap{
-				4: map[int]int{
-					9: 0,
+				4: map[int]coordVal{
+					9: {},
 				},
 			},
 		},
@@ -169,30 +169,30 @@ func Test_StandardSurface_Remove(t *testing.T) {
 			description: "removes from the middle correctly",
 			input: input{
 				surface: surfaceMap{
-					1: map[int]int{
-						2: 0,
+					1: map[int]coordVal{
+						2: {},
 					},
-					4: map[int]int{
-						5: 0,
-						6: 0,
-						9: 0,
+					4: map[int]coordVal{
+						5: {},
+						6: {},
+						9: {},
 					},
-					8: map[int]int{
-						9: 0,
+					8: map[int]coordVal{
+						9: {},
 					},
 				},
 				remove: []Coord{{4, 6}},
 			},
 			expected: surfaceMap{
-				1: map[int]int{
-					2: 0,
+				1: map[int]coordVal{
+					2: {},
 				},
-				4: map[int]int{
-					5: 0,
-					9: 0,
+				4: map[int]coordVal{
+					5: {},
+					9: {},
 				},
-				8: map[int]int{
-					9: 0,
+				8: map[int]coordVal{
+					9: {},
 				},
 			},
 		},
@@ -200,29 +200,29 @@ func Test_StandardSurface_Remove(t *testing.T) {
 			description: "removes multiple correctly",
 			input: input{
 				surface: surfaceMap{
-					1: map[int]int{
-						2: 0,
+					1: map[int]coordVal{
+						2: {},
 					},
-					4: map[int]int{
-						5: 0,
-						6: 0,
-						9: 0,
+					4: map[int]coordVal{
+						5: {},
+						6: {},
+						9: {},
 					},
-					8: map[int]int{
-						9: 0,
+					8: map[int]coordVal{
+						9: {},
 					},
 				},
 				remove: []Coord{{4, 6}, {8, 9}},
 			},
 			expected: surfaceMap{
-				1: map[int]int{
-					2: 0,
+				1: map[int]coordVal{
+					2: {},
 				},
-				4: map[int]int{
-					5: 0,
-					9: 0,
+				4: map[int]coordVal{
+					5: {},
+					9: {},
 				},
-				8: map[int]int{},
+				8: map[int]coordVal{},
 			},
 		},
 	}

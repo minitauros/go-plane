@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -117,8 +116,8 @@ func Test_FloodFiller_canReach(t *testing.T) {
 
 		Convey("If none of the possible starting coords is filled", func() {
 			Convey("If can make path", func() {
-				Convey("Returns the number of steps", func() {
-					So(filler.canReach(base, target), ShouldBeTrue)
+				Convey("Returns true", func() {
+					So(filler.canReach(base, target, false), ShouldBeTrue)
 				})
 			})
 
@@ -126,7 +125,7 @@ func Test_FloodFiller_canReach(t *testing.T) {
 				drawHorizontalLineInMiddle()
 
 				Convey("Returns false", func() {
-					So(filler.canReach(base, target), ShouldBeFalse)
+					So(filler.canReach(base, target, false), ShouldBeFalse)
 				})
 			})
 		})
@@ -136,8 +135,8 @@ func Test_FloodFiller_canReach(t *testing.T) {
 				s.Fill(startingCoord)
 
 				Convey("If can make path", func() {
-					Convey("Returns the number of steps", func() {
-						So(filler.canReach(base, target), ShouldBeTrue)
+					Convey("Returns true", func() {
+						So(filler.canReach(base, target, false), ShouldBeTrue)
 					})
 				})
 
@@ -145,7 +144,7 @@ func Test_FloodFiller_canReach(t *testing.T) {
 					drawHorizontalLineInMiddle()
 
 					Convey("Returns false", func() {
-						So(filler.canReach(base, target), ShouldBeFalse)
+						So(filler.canReach(base, target, false), ShouldBeFalse)
 					})
 				})
 			})
@@ -155,7 +154,7 @@ func Test_FloodFiller_canReach(t *testing.T) {
 			s.Fill(possibleStartingCoords...)
 
 			Convey("Returns false", func() {
-				So(filler.canReach(base, target), ShouldBeFalse)
+				So(filler.canReach(base, target, false), ShouldBeFalse)
 			})
 		})
 
@@ -163,7 +162,7 @@ func Test_FloodFiller_canReach(t *testing.T) {
 			s.Fill(Coord{2, 2}, Coord{3, 4})
 
 			Convey("Returns the number of steps", func() {
-				So(filler.canReach(base, target), ShouldBeTrue)
+				So(filler.canReach(base, target, false), ShouldBeTrue)
 			})
 		})
 
@@ -186,21 +185,21 @@ func Test_FloodFiller_canReach(t *testing.T) {
 			}
 
 			Convey("If can make path", func() {
-				Convey("Returns the number of steps", func() {
-					So(filler.canReach(base, target, mayStartOnlyAt), ShouldBeTrue)
+				Convey("Returns true", func() {
+					So(filler.canReach(base, target, false, mayStartOnlyAt), ShouldBeTrue)
 				})
 			})
 
 			Convey("If cannot make path", func() {
-				// fill bottom right coord.
+				// flood bottom right coord.
 				s.Fill(Coord{s.width - 1, 0})
 
 				Convey("Returns false", func() {
-					So(filler.canReach(base, target, mayStartOnlyAt), ShouldBeFalse)
+					So(filler.canReach(base, target, false, mayStartOnlyAt), ShouldBeFalse)
 				})
 
 				Convey("To the top still works (where we can make a path)", func() {
-					So(filler.canReach(base, target, Coord{0, 1}), ShouldBeTrue)
+					So(filler.canReach(base, target, false, Coord{0, 1}), ShouldBeTrue)
 				})
 			})
 		})
@@ -214,7 +213,6 @@ func Test_FloodFiller_CountSteps(t *testing.T) {
 		base := Coord{0, 0}
 		target := Coord{4, 4}
 		possibleStartingCoords := []Coord{{0, 1}, {1, 0}}
-
 		drawHorizontalLineInMiddle := func() {
 			for x := 0; x < s.width; x++ {
 				s.Fill(Coord{x, s.height / 2})
@@ -227,7 +225,7 @@ func Test_FloodFiller_CountSteps(t *testing.T) {
 
 				Convey("If can make path", func() {
 					Convey("Returns the shortest path", func() {
-						So(filler.CountSteps(base, target), ShouldEqual, s.width+s.height-1)
+						So(filler.CountSteps(base, target), ShouldEqual, s.width+s.height-2)
 					})
 				})
 
@@ -235,7 +233,9 @@ func Test_FloodFiller_CountSteps(t *testing.T) {
 					drawHorizontalLineInMiddle()
 
 					Convey("Returns -1", func() {
-						So(filler.CountSteps(base, target), ShouldEqual, -1)
+						steps := filler.CountSteps(base, target)
+
+						So(steps, ShouldEqual, -1)
 					})
 				})
 			})
@@ -250,22 +250,14 @@ func Test_FloodFiller_CountSteps(t *testing.T) {
 			// . x x x . x .
 			// S . . . . . .
 			// We expect the filler to find the shortest route (12).
-			rows := [][]int{
+			s := NewSurface(7, 5)
+			s.fillRows([][]int{
 				{0, 0, 0, 0, 0, 0, 0},
 				{0, 0, 0, 1, 1, 1, 0},
 				{1, 1, 0, 0, 0, 1, 0},
 				{0, 1, 1, 1, 0, 1, 0},
 				{0, 0, 0, 0, 0, 0, 0},
-			}
-			s := NewSurface(7, 5)
-			for y, row := range rows {
-				for x, val := range row {
-					if val == 0 {
-						continue
-					}
-					s.Fill(Coord{x, s.height - y - 1})
-				}
-			}
+			})
 			filler := NewFloodFiller(s)
 			base := Coord{0, 0}
 			target := Coord{0, 5}
@@ -286,126 +278,183 @@ func Test_FloodFiller_CountSteps(t *testing.T) {
 		})
 
 		Convey("If target is next to starting point", func() {
-			fmt.Println("")
 			// . . .
 			// . . .
 			// s t .
 			// s = start; t = target
 			s := NewSurface(3, 3)
-			s.fillRows([][]int{
-				{0, 0, 0},
-				{0, 0, 0},
-				{0, 1, 0},
-			})
-			fmt.Println(GetRenderWithValues(s))
 			filler := NewFloodFiller(s)
 
-			Convey("Returns 1", func() {
-				numSteps := filler.CountSteps(Coord{0, 0}, Coord{0, 1})
-				fmt.Println(GetRenderWithValues(s))
+			Convey("And is not filled already", func() {
+				Convey("Returns 1", func() {
+					numSteps := filler.CountSteps(Coord{0, 0}, Coord{1, 0})
 
-				fmt.Println("")
-				fmt.Println("s.surface:")
-				spew.Dump(s.surface)
-				fmt.Println("")
+					So(numSteps, ShouldEqual, 1)
+				})
+			})
 
-				So(numSteps, ShouldEqual, 1)
+			Convey("And is filled already", func() {
+				s.Fill(Coord{1, 0})
+
+				Convey("Returns 1", func() {
+					numSteps := filler.CountSteps(Coord{0, 0}, Coord{1, 0})
+
+					So(numSteps, ShouldEqual, 1)
+				})
+
 			})
 		})
 	})
 }
 
 func Test_FloodFiller_fill(t *testing.T) {
-	Convey("FloodFiller.fill()", t, func() {
+	Convey("FloodFiller.flood()", t, func() {
 		s := NewSurface(3, 3)
 		filler := NewFloodFiller(s)
 
-		Convey("Correctly fills the field", func() {
-			filler.fill(Coord{0, 0}, Coord{1, 0})
+		Convey("When tracking distance", func() {
 
-			// Bottom row
-			v, ok := s.surface[0][0]
-			So(ok, ShouldBeFalse)
-			So(v, ShouldEqual, 0)
+			Convey("Correctly fills the field", func() {
+				filler.flood(Coord{0, 0}, Coord{1, 0}, true)
 
-			v, ok = s.surface[1][0]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 1)
+				// Bottom row
+				v, ok := s.surface[0][0]
+				So(ok, ShouldBeFalse)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 0,
+				})
 
-			v, ok = s.surface[2][0]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 2)
+				v, ok = s.surface[1][0]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 1,
+				})
 
-			// Middle row
-			v, ok = s.surface[0][1]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 3)
+				v, ok = s.surface[2][0]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 2,
+				})
 
-			v, ok = s.surface[1][1]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 2)
+				// Middle row
+				v, ok = s.surface[0][1]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 3,
+				})
 
-			v, ok = s.surface[2][1]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 3)
+				v, ok = s.surface[1][1]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 2,
+				})
 
-			// Top row
-			v, ok = s.surface[0][2]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 4)
+				v, ok = s.surface[2][1]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 3,
+				})
 
-			v, ok = s.surface[1][2]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 3)
+				// Top row
+				v, ok = s.surface[0][2]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 4,
+				})
 
-			v, ok = s.surface[2][2]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 4)
-		})
+				v, ok = s.surface[1][2]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 3,
+				})
 
-		Convey("Correctly fills already filled coords (that don't have a value)", func() {
-			s.Fill(Coord{0, 1})
+				v, ok = s.surface[2][2]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 4,
+				})
+			})
 
-			filler.fill(Coord{0, 0}, Coord{1, 0})
+			Convey("Correctly fills already filled coords (that don't have a value)", func() {
+				s.Fill(Coord{0, 1})
 
-			// Bottom row
-			v, ok := s.surface[0][0]
-			So(ok, ShouldBeFalse)
-			So(v, ShouldEqual, 0)
+				filler.flood(Coord{0, 0}, Coord{1, 0}, true)
 
-			v, ok = s.surface[1][0]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 1)
+				// Bottom row
+				v, ok := s.surface[0][0]
+				So(ok, ShouldBeFalse)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 0,
+				})
 
-			v, ok = s.surface[2][0]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 2)
+				v, ok = s.surface[1][0]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 1,
+				})
 
-			// Middle row
-			v, ok = s.surface[0][1]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 3)
+				v, ok = s.surface[2][0]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 2,
+				})
 
-			v, ok = s.surface[1][1]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 2)
+				// Middle row
+				v, ok = s.surface[0][1]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: true,
+					distance: 3,
+				})
 
-			v, ok = s.surface[2][1]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 3)
+				v, ok = s.surface[1][1]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 2,
+				})
 
-			// Top row
-			v, ok = s.surface[0][2]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 4)
+				v, ok = s.surface[2][1]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 3,
+				})
 
-			v, ok = s.surface[1][2]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 3)
+				// Top row
+				v, ok = s.surface[0][2]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 4,
+				})
 
-			v, ok = s.surface[2][2]
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, 4)
+				v, ok = s.surface[1][2]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 3,
+				})
+
+				v, ok = s.surface[2][2]
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, coordVal{
+					isFilled: false,
+					distance: 4,
+				})
+			})
 		})
 	})
 }

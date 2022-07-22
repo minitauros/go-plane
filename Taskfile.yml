@@ -1,0 +1,24 @@
+version: '3'
+tasks:
+  unit:
+    desc: Run unit tests
+    cmds:
+      - go test -v -failfast {{if eq .GOARCH "arm64"}}-tags=dynamic{{end}} -count=1 -p=1 {{if .run}}-run {{.run}}{{end}}
+        $(go list ./... | grep -v /integration)
+
+  vet:
+    desc: Run vet tool
+    cmds:
+      - go vet $(go list ./...)
+
+  fmt:
+    desc: Run code formatter
+    cmds:
+      - gofmt -w $(find . -name "*.go" | grep -Ev 'vendor|pb.go|mock|trash' | uniq)
+
+  qa:
+    desc: Run a series of quality assurance tasks
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: unit

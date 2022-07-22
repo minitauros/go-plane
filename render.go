@@ -48,7 +48,7 @@ func GetRenderWithValues(s *Surface) string {
 		vals := make([]string, 0, s.height)
 
 		for x := 0; x < s.width; x++ {
-			v := s.getValue(Coord{x, y})
+			v := s.getDistance(Coord{x, y})
 			if v == -1 {
 				vals = append(vals, " .")
 			} else {
