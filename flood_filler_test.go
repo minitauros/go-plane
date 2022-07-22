@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -282,6 +283,129 @@ func Test_FloodFiller_CountSteps(t *testing.T) {
 					So(filler.CountSteps(base, target), ShouldEqual, -1)
 				})
 			})
+		})
+
+		Convey("If target is next to starting point", func() {
+			fmt.Println("")
+			// . . .
+			// . . .
+			// s t .
+			// s = start; t = target
+			s := NewSurface(3, 3)
+			s.fillRows([][]int{
+				{0, 0, 0},
+				{0, 0, 0},
+				{0, 1, 0},
+			})
+			fmt.Println(GetRenderWithValues(s))
+			filler := NewFloodFiller(s)
+
+			Convey("Returns 1", func() {
+				numSteps := filler.CountSteps(Coord{0, 0}, Coord{0, 1})
+				fmt.Println(GetRenderWithValues(s))
+
+				fmt.Println("")
+				fmt.Println("s.surface:")
+				spew.Dump(s.surface)
+				fmt.Println("")
+
+				So(numSteps, ShouldEqual, 1)
+			})
+		})
+	})
+}
+
+func Test_FloodFiller_fill(t *testing.T) {
+	Convey("FloodFiller.fill()", t, func() {
+		s := NewSurface(3, 3)
+		filler := NewFloodFiller(s)
+
+		Convey("Correctly fills the field", func() {
+			filler.fill(Coord{0, 0}, Coord{1, 0})
+
+			// Bottom row
+			v, ok := s.surface[0][0]
+			So(ok, ShouldBeFalse)
+			So(v, ShouldEqual, 0)
+
+			v, ok = s.surface[1][0]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 1)
+
+			v, ok = s.surface[2][0]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 2)
+
+			// Middle row
+			v, ok = s.surface[0][1]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 3)
+
+			v, ok = s.surface[1][1]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 2)
+
+			v, ok = s.surface[2][1]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 3)
+
+			// Top row
+			v, ok = s.surface[0][2]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 4)
+
+			v, ok = s.surface[1][2]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 3)
+
+			v, ok = s.surface[2][2]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 4)
+		})
+
+		Convey("Correctly fills already filled coords (that don't have a value)", func() {
+			s.Fill(Coord{0, 1})
+
+			filler.fill(Coord{0, 0}, Coord{1, 0})
+
+			// Bottom row
+			v, ok := s.surface[0][0]
+			So(ok, ShouldBeFalse)
+			So(v, ShouldEqual, 0)
+
+			v, ok = s.surface[1][0]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 1)
+
+			v, ok = s.surface[2][0]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 2)
+
+			// Middle row
+			v, ok = s.surface[0][1]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 3)
+
+			v, ok = s.surface[1][1]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 2)
+
+			v, ok = s.surface[2][1]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 3)
+
+			// Top row
+			v, ok = s.surface[0][2]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 4)
+
+			v, ok = s.surface[1][2]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 3)
+
+			v, ok = s.surface[2][2]
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 4)
 		})
 	})
 }

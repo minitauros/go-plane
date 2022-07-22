@@ -150,10 +150,10 @@ func (s *Surface) hasValue(coord Coord) bool {
 
 func (s *Surface) getValue(coord Coord) int {
 	s.mux.RLock()
+	defer s.mux.RUnlock()
 	if v, ok := s.surface[coord.X][coord.Y]; ok {
 		return v
 	}
-	s.mux.RUnlock()
 	return -1
 }
 
@@ -182,4 +182,23 @@ func (s *Surface) getCoordsFilledAround(coord Coord) Coords {
 		}
 	}
 	return filled
+}
+
+// fillRows is a utility method to conveniently fill the surface.
+// Example input:
+// [][]int{
+//   {0, 0, 0},
+//   {0, 0, 0},
+//   {0, 1, 0},
+// }
+// Will fill {1,0}.
+func (s *Surface) fillRows(rows [][]int) {
+	for y, row := range rows {
+		for x, val := range row {
+			if val == 0 {
+				continue
+			}
+			s.Fill(Coord{x, s.height - y - 1})
+		}
+	}
 }
