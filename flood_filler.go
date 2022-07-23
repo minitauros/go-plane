@@ -47,7 +47,7 @@ func (f *FloodFiller) CountSteps(base, target Coord) int {
 func (f *FloodFiller) canReach(base, target Coord, countSteps bool, allowedStarts ...Coord) bool {
 	distanceBefore := f.s.getDistance(target)
 	filledAroundBefore := f.s.getCoordsFilledAround(target)
-	for _, d := range base.GetDirectionsTo(target) {
+	for _, d := range GetAllDirections() {
 		coordInDirection := base.GetCoordInDirection(d)
 		if len(allowedStarts) > 0 {
 			var mayStartInThisDirection bool
