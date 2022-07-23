@@ -127,6 +127,16 @@ func (coords *Coords) Remove(coordsToRemove ...Coord) {
 	*coords = newCoords
 }
 
+// Contains returns true if the given coord is in the current collection of coords.
+func (coords Coords) Contains(coord Coord) bool {
+	for _, c := range coords {
+		if c.Equals(coord) {
+			return true
+		}
+	}
+	return false
+}
+
 // String satisfies stringer.
 func (coords Coords) String() string {
 	chunks := make([]string, 0, len(coords))
