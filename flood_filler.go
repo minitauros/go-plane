@@ -78,7 +78,6 @@ func (f *FloodFiller) flood(base, start Coord, countSteps bool) {
 		f.exploreDistance(start, start.GetDirectionsTo(base)[0], 0)
 	} else {
 		f.explore(start, start.GetDirectionsTo(base)[0])
-
 	}
 
 	f.s.Remove(base)
@@ -86,23 +85,17 @@ func (f *FloodFiller) flood(base, start Coord, countSteps bool) {
 
 func (f *FloodFiller) explore(
 	target Coord,
-	skipDirection Direction,
+	comingFromDirection Direction,
 ) {
 	if f.s.IsFilled(target) {
 		return
 	}
 	f.s.Fill(target)
 	for _, d := range GetAllDirections() {
-		if d == skipDirection {
+		if d == comingFromDirection {
 			continue
 		}
-		next := target.GetCoordInDirection(d)
-		goingInSameDirection := d == skipDirection.Opposite()
-		if goingInSameDirection {
-			f.explore(next, d.Opposite())
-		} else {
-			f.explore(next, d.Opposite())
-		}
+		f.explore(target.GetCoordInDirection(d), d.Opposite())
 	}
 }
 
@@ -111,7 +104,7 @@ func (f *FloodFiller) explore(
 // but that can be explored by a different call/routine in fewer steps.
 func (f *FloodFiller) exploreDistance(
 	target Coord,
-	skipDirection Direction,
+	comingFromDirection Direction,
 	numStepsTaken int,
 ) {
 	numStepsTaken++
@@ -128,15 +121,9 @@ func (f *FloodFiller) exploreDistance(
 		return
 	}
 	for _, d := range GetAllDirections() {
-		if d == skipDirection {
+		if d == comingFromDirection {
 			continue
 		}
-		next := target.GetCoordInDirection(d)
-		goingInSameDirection := d == skipDirection.Opposite()
-		if goingInSameDirection {
-			f.exploreDistance(next, d.Opposite(), numStepsTaken)
-		} else {
-			f.exploreDistance(next, d.Opposite(), numStepsTaken)
-		}
+		f.exploreDistance(target.GetCoordInDirection(d), d.Opposite(), numStepsTaken)
 	}
 }
