@@ -12,17 +12,15 @@ func NewFloodFiller(surface *Surface) *FloodFiller {
 	}
 }
 
-// Fill starts a flood fill from `base`, starting the flood at `startAt`.
+// Flood starts a flood fill from `base`, starting the flood at `startAt`.
 // It returns the number of coords that were filled.
 // It does not flood `base`.
-func (f *FloodFiller) Fill(base, startAt Coord) int {
+func (f *FloodFiller) Flood(base, startAt Coord) Coords {
 	if !base.ConnectsTo(startAt) {
-		return 0
+		return Coords{}
 	}
-	numFilledAtStart := f.s.CountFilled()
-	f.flood(base, startAt, false)
-	numFilledAtEnd := f.s.CountFilled()
-	return numFilledAtEnd - numFilledAtStart
+	coordsFilled := f.flood(base, startAt, false)
+	return coordsFilled
 }
 
 // CanReach returns true if a path can be made through unfilled coords from `base` to `target`.
@@ -70,32 +68,36 @@ func (f *FloodFiller) canReach(base, target Coord, countSteps bool, allowedStart
 	return len(filledAroundAfter) > len(filledAroundBefore)
 }
 
-func (f *FloodFiller) flood(base, start Coord, countSteps bool) {
-	// Fill base coord so that the flood cannot escape.
+func (f *FloodFiller) flood(base, start Coord, countSteps bool) Coords {
+	// Flood base coord so that the flood cannot escape.
 	f.s.Fill(base)
 
+	filled := &Coords{}
 	if countSteps {
 		f.exploreDistance(start, start.GetDirectionsTo(base)[0], 0)
 	} else {
-		f.explore(start, start.GetDirectionsTo(base)[0])
+		f.explore(start, start.GetDirectionsTo(base)[0], filled)
 	}
 
 	f.s.Remove(base)
+	return *filled
 }
 
 func (f *FloodFiller) explore(
 	target Coord,
 	comingFromDirection Direction,
+	filled *Coords,
 ) {
 	if f.s.IsFilled(target) {
 		return
 	}
 	f.s.Fill(target)
+	*filled = append(*filled, target)
 	for _, d := range GetAllDirections() {
 		if d == comingFromDirection {
 			continue
 		}
-		f.explore(target.GetCoordInDirection(d), d.Opposite())
+		f.explore(target.GetCoordInDirection(d), d.Opposite(), filled)
 	}
 }
 

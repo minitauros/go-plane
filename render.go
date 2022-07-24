@@ -25,11 +25,11 @@ func GetRender(s *Surface) string {
 
 	rowVals := make([]string, 0, len(rows))
 	for i, row := range rows {
-		row = append([]string{fmt.Sprintf("%02d | ", s.height-i-1)}, row...)
+		row = append([]string{fmt.Sprintf("%02d |", s.height-i-1)}, row...)
 		rowVals = append(rowVals, strings.Join(row, " "))
 	}
 
-	rowVals = append(rowVals, "     "+strings.Repeat("-", s.width*2-1))
+	rowVals = append(rowVals, "    "+strings.Repeat("-", s.width*2))
 
 	xLegendVals := []string{"    "}
 	for x := 0; x < s.width; x++ {

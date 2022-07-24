@@ -7,20 +7,49 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func Test_FloodFiller_CountUnfilledSurface(t *testing.T) {
-	Convey("FloodFiller.Fill()", t, func() {
+func Test_FloodFiller_Fill(t *testing.T) {
+	Convey("FloodFiller.Flood()", t, func() {
 		s := NewSurface(9, 9)
 		filler := NewFloodFiller(s)
-		totalSurface := s.width * s.height
 
 		Convey("If counting full board", func() {
 			Convey("Without obstacles", func() {
 				Convey("Works correctly", func() {
-					So(filler.Fill(Coord{0, 0}, Coord{0, 1}), ShouldEqual, totalSurface-1)
+					filled := filler.Flood(Coord{0, 0}, Coord{0, 1})
+					for x := 0; x < s.width; x++ {
+						for y := 0; y < s.height; y++ {
+							if x == 0 && y == 0 {
+								// We don't expect the starting coord to be filled.
+								continue
+							}
+							var isFilled bool
+							for _, coord := range filled {
+								if coord.X == x && coord.Y == y {
+									isFilled = true
+									break
+								}
+							}
+							Convey(fmt.Sprintf("%d,%d is filled", x, y), func() {
+								So(isFilled, ShouldBeTrue)
+							})
+						}
+					}
+					So(filled, ShouldHaveLength, s.width*s.height-1)
 				})
 			})
 
 			Convey("With obstacles", func() {
+				// 08 | . . . . . . . . .
+				// 07 | . . . . . . . . .
+				// 06 | . . . . . . . . .
+				// 05 | . x x x x x . . .
+				// 04 | . x . . . x . . .
+				// 03 | . x . . . x . . .
+				// 02 | . x . . . x . . .
+				// 01 | . x . x x x . . .
+				// 00 | . . . . . . . . .
+				//     ------------------
+				//      0 1 2 3 4 5 6 7 8
 				coords := []Coord{
 					{1, 1},
 					// {2, 1}, // This is the opening into an enclosed space. We expect the inside to be counted.
@@ -42,7 +71,50 @@ func Test_FloodFiller_CountUnfilledSurface(t *testing.T) {
 				s.Fill(coords...)
 
 				Convey("Works correctly", func() {
-					So(filler.Fill(Coord{0, 0}, Coord{0, 1}), ShouldEqual, totalSurface-len(coords)-1)
+					filled := filler.Flood(Coord{0, 0}, Coord{0, 1})
+
+					expectedFilled := Coords{
+						// Enclosed space + opening
+						{2, 1}, {2, 2}, {3, 2}, {4, 2},
+						{2, 3}, {3, 3}, {4, 3},
+						{2, 4}, {3, 4}, {4, 4},
+						// Outside area.
+						{1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {6, 0}, {7, 0}, {8, 0},
+						{0, 1}, {6, 1}, {7, 1}, {8, 1},
+						{0, 2}, {6, 2}, {7, 2}, {8, 2},
+						{0, 3}, {6, 3}, {7, 3}, {8, 3},
+						{0, 4}, {6, 4}, {7, 4}, {8, 4},
+						{0, 5}, {6, 5}, {7, 5}, {8, 5},
+						{0, 6}, {1, 6}, {2, 6}, {3, 6}, {4, 6}, {5, 6}, {6, 6}, {7, 6}, {8, 6},
+						{0, 7}, {1, 7}, {2, 7}, {3, 7}, {4, 7}, {5, 7}, {6, 7}, {7, 7}, {8, 7},
+						{0, 8}, {1, 8}, {2, 8}, {3, 8}, {4, 8}, {5, 8}, {6, 8}, {7, 8}, {8, 8},
+					}
+
+					for _, coord := range expectedFilled {
+						var isFilled bool
+						for _, coord2 := range filled {
+							if coord.Equals(coord2) {
+								isFilled = true
+								break
+							}
+						}
+						Convey(fmt.Sprintf("Expected %s is filled", coord), func() {
+							So(isFilled, ShouldBeTrue)
+						})
+					}
+
+					for _, coord := range filled {
+						var isExpected bool
+						for _, coord2 := range expectedFilled {
+							if coord.Equals(coord2) {
+								isExpected = true
+								break
+							}
+						}
+						Convey(fmt.Sprintf("Flood of %s was expected", coord), func() {
+							So(isExpected, ShouldBeTrue)
+						})
+					}
 				})
 			})
 		})
@@ -71,7 +143,7 @@ func Test_FloodFiller_CountUnfilledSurface(t *testing.T) {
 
 			Convey("Without obstacles", func() {
 				Convey("Works correctly", func() {
-					So(filler.Fill(start, start.GetCoordInDirection(Top)), ShouldEqual, 9)
+					So(len(filler.Flood(start, start.GetCoordInDirection(Top))), ShouldEqual, 9)
 				})
 			})
 
@@ -83,19 +155,19 @@ func Test_FloodFiller_CountUnfilledSurface(t *testing.T) {
 				)
 
 				Convey("Works correctly", func() {
-					So(filler.Fill(start, start.GetCoordInDirection(Top)), ShouldEqual, 6)
+					So(len(filler.Flood(start, start.GetCoordInDirection(Top))), ShouldEqual, 6)
 				})
 			})
 		})
 
 		Convey("If starting count on an unconnected coordinate, returns 0", func() {
-			So(filler.Fill(Coord{0, 0}, Coord{1, 1}), ShouldEqual, 0)
+			So(len(filler.Flood(Coord{0, 0}, Coord{1, 1})), ShouldEqual, 0)
 		})
 
 		Convey("If starting on an already filled piece, returns 0", func() {
 			s.Fill(Coord{1, 1})
 
-			So(filler.Fill(Coord{0, 0}, Coord{1, 1}), ShouldEqual, 0)
+			So(len(filler.Flood(Coord{0, 0}, Coord{1, 1})), ShouldEqual, 0)
 		})
 	})
 }
@@ -307,15 +379,16 @@ func Test_FloodFiller_CountSteps(t *testing.T) {
 	})
 }
 
-func Test_FloodFiller_fill(t *testing.T) {
+func Test_FloodFiller_flood(t *testing.T) {
 	Convey("FloodFiller.flood()", t, func() {
 		s := NewSurface(3, 3)
 		filler := NewFloodFiller(s)
 
 		Convey("When tracking distance", func() {
-
 			Convey("Correctly fills the field", func() {
-				filler.flood(Coord{0, 0}, Coord{1, 0}, true)
+				filled := filler.flood(Coord{0, 0}, Coord{1, 0}, true)
+
+				So(filled, ShouldResemble, Coords{})
 
 				// Bottom row
 				v, ok := s.surface[0][0]

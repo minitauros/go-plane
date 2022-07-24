@@ -96,7 +96,7 @@ func main() {
 	// That means that the whole surface will be filled after this fill,
 	// except the `base` coordinate. If you want to fill this,
 	// call `surface.Fill()`.
-	ff.Fill(plane.Coord{0, 0}, plane.Coord{0, 1})
+	filledCoords := ff.Flood(plane.Coord{0, 0}, plane.Coord{0, 1})
 
 	// Return the quickest path from 0,0 to 4,4.
 	// This will go around obstacles.
