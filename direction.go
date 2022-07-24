@@ -12,6 +12,16 @@ const (
 	Left  Direction = "left"
 )
 
+// IsVertical returns true if the direction is vertical.
+func (d Direction) IsVertical() bool {
+	return d == Top || d == Bot
+}
+
+// IsHorizontal returns true if the direction is horizontal.
+func (d Direction) IsHorizontal() bool {
+	return d == Left || d == Right
+}
+
 // Opposite returns the opposite direction.
 func (d Direction) Opposite() Direction {
 	switch d {
