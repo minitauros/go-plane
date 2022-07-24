@@ -28,9 +28,9 @@ func (f *FloodFiller) CanReach(base, target Coord) bool {
 	return f.canReach(base, target, false)
 }
 
-// CanReachWhenStartingFillAt returns true if a path can be made through unfilled coords from `base` to `target`,
+// CanReachWhenStartingFloodAt returns true if a path can be made through unfilled coords from `base` to `target`,
 // given that the flood fill must start at `startAt`.
-func (f *FloodFiller) CanReachWhenStartingFillAt(base, target, startAt Coord) bool {
+func (f *FloodFiller) CanReachWhenStartingFloodAt(base, target, startAt Coord) bool {
 	return f.canReach(base, target, false, startAt)
 }
 

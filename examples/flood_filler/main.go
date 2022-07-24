@@ -33,5 +33,5 @@ func main() {
 	// obstacles (filled coords) in the way that the flood cannot pass
 	// through in some way.
 	// Forces the flood to start at 0,1 and gives it no other options.
-	ff.CanReachWhenStartingFillAt(plane.Coord{0, 0}, plane.Coord{4, 4}, plane.Coord{0, 1})
+	ff.CanReachWhenStartingFloodAt(plane.Coord{0, 0}, plane.Coord{4, 4}, plane.Coord{0, 1})
 }
