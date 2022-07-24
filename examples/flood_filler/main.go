@@ -13,12 +13,15 @@ func main() {
 	// and we do not want to mess up the original state.
 	ff := plane.NewFloodFiller(surface.Clone())
 
-	// Flood the plane, using 0,0 as base and starting the flood at 0,1.
+	// Flood fill the plane, using 0,0 as base and starting the flood at 0,1.
 	// Note that this does **not** fill `base`.
 	// That means that the whole surface will be filled after this fill,
-	// except the `base` coordinate. If you want to fill this,
-	// call `surface.Flood()`.
+	// except the `base` coordinate. If you want to fill the base coord,
+	// use `surface.Fill(baseCoord)`.
+	// The returned `plane.Coords{}` contains all coords that were filled
+	// by the flood.
 	filledCoords := ff.Flood(plane.Coord{0, 0}, plane.Coord{0, 1})
+	numFilled := len(filledCoords)
 
 	// Return the quickest path from 0,0 to 4,4.
 	// This will go around obstacles.

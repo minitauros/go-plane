@@ -30,7 +30,7 @@ func main() {
 	surface.Remove(plane.Coord{0, 0})
 	surface.IsFilled(plane.Coord{0, 0}) // False
 
-	// Looping over all filled coords.
+	// Iterate over all filled coords.
 	for coord := range surface.EachFilled() {
 		// Do something..
 	}
