@@ -137,6 +137,26 @@ func (coords Coords) Contains(coord Coord) bool {
 	return false
 }
 
+// Equals returns true if the current coords contain exactly the same coords as the given coords.
+func (coords Coords) Equals(other Coords) bool {
+	if len(coords) != len(other) {
+		return false
+	}
+	for _, c1 := range coords {
+		var hasMatch bool
+		for _, c2 := range other {
+			if c1.Equals(c2) {
+				hasMatch = true
+				break
+			}
+		}
+		if !hasMatch {
+			return false
+		}
+	}
+	return true
+}
+
 // String satisfies stringer.
 func (coords Coords) String() string {
 	chunks := make([]string, 0, len(coords))

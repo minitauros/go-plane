@@ -3,8 +3,7 @@ tasks:
   unit:
     desc: Run unit tests
     cmds:
-      - go test -v -failfast {{if eq .GOARCH "arm64"}}-tags=dynamic{{end}} -count=1 -p=1 {{if .run}}-run {{.run}}{{end}}
-        $(go list ./... | grep -v /integration)
+      - go test -v -failfast {{if eq .GOARCH "arm64"}}-tags=dynamic{{end}} {{if .run}}-run {{.run}}{{end}} .
 
   vet:
     desc: Run vet tool

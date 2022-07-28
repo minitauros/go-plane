@@ -275,3 +275,58 @@ func Test_Coord_GetCoordAt(t *testing.T) {
 		}
 	})
 }
+
+func Test_Coords_Equals(t *testing.T) {
+	type input struct {
+		c1 Coords
+		c2 Coords
+	}
+	testCases := []struct {
+		description string
+		input       input
+		expected    bool
+	}{
+		{
+			description: "Returns true if all are equal, same order",
+			input: input{
+				c1: Coords{{0, 0}, {0, 1}},
+				c2: Coords{{0, 0}, {0, 1}},
+			},
+			expected: true,
+		},
+		{
+			description: "Returns true if all are equal, reverse order",
+			input: input{
+				c1: Coords{{0, 0}, {0, 1}},
+				c2: Coords{{0, 1}, {0, 0}},
+			},
+			expected: true,
+		},
+		{
+			description: "Returns false if are not equal because c2 contains extra element",
+			input: input{
+				c1: Coords{{0, 0}, {0, 1}},
+				c2: Coords{{0, 0}, {0, 1}, {0, 2}},
+			},
+			expected: false,
+		},
+		{
+			description: "Returns false if are not equal because c1 contains extra element",
+			input: input{
+				c1: Coords{{0, 0}, {0, 1}, {0, 2}},
+				c2: Coords{{0, 0}, {0, 1}},
+			},
+			expected: false,
+		},
+	}
+
+	Convey("Coords.Equals()", t, func() {
+		for i, tc := range testCases {
+			Convey(fmt.Sprintf("%d: %s", i, tc.description), func() {
+				res := tc.input.c1.Equals(tc.input.c2)
+
+				So(res, ShouldEqual, tc.expected)
+			})
+		}
+	})
+}
